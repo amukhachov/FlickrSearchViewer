@@ -24,8 +24,10 @@ import com.project.flickrsearchclient.R;
 import com.project.flickrsearchclient.application.ApplicationComponent;
 import com.project.flickrsearchclient.application.FlickrSearchApplication;
 import com.project.flickrsearchclient.model.Photo;
+import com.project.flickrsearchclient.model.SearchQuery;
 import com.project.flickrsearchclient.model.SearchResult;
 import com.project.flickrsearchclient.network.ApiClient;
+import com.project.flickrsearchclient.repo.SearchRepository;
 import com.project.flickrsearchclient.ui.adapter.EndlessScrollListener;
 import com.project.flickrsearchclient.ui.adapter.SearchResultAdapter;
 import com.project.flickrsearchclient.ui.adapter.SpacingDecoration;
@@ -54,6 +56,9 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
 
     @Inject
     ApiClient mApiClient;
+
+    @Inject
+    SearchRepository mSearchRepository;
 
     @BindView(R.id.result_recyclerview)
     RecyclerView mResultRecyclerView;
@@ -185,6 +190,25 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.history) {
+            showHistoryFragment();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showHistoryFragment() {
+        getChildFragmentManager()
+                .beginTransaction()
+                .add(R.id.history_container, HistoryFragment.getInstance())
+                .addToBackStack(null)
+                .setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+                .commitAllowingStateLoss();
+
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
@@ -206,6 +230,7 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
     @Override
     public boolean onQueryTextSubmit(String query) {
         startSearch(query);
+        mSearchRepository.add(new SearchQuery(query));
         return false;
     }
 

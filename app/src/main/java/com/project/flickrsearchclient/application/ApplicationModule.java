@@ -2,6 +2,8 @@ package com.project.flickrsearchclient.application;
 
 import android.content.Context;
 
+import com.project.flickrsearchclient.repo.SearchRepository;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,5 +33,11 @@ public class ApplicationModule {
     @Singleton
     ExecutorService provideThreadExecutor() {
         return Executors.newSingleThreadExecutor();
+    }
+
+    @Provides
+    @Singleton
+    SearchRepository provideSearchRepository() {
+        return SearchRepository.getInstance(application);
     }
 }

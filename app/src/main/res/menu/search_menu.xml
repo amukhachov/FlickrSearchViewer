@@ -10,7 +10,7 @@
         app:showAsAction="always" />
 
     <item
-        android:id="@+id/current_location"
+        android:id="@+id/history"
         android:icon="@drawable/ic_history_white_24dp"
         android:title="@string/history"
         app:showAsAction="ifRoom" />
