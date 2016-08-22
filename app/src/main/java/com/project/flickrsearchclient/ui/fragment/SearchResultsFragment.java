@@ -28,9 +28,9 @@ import com.project.flickrsearchclient.model.SearchQuery;
 import com.project.flickrsearchclient.model.SearchResult;
 import com.project.flickrsearchclient.network.ApiClient;
 import com.project.flickrsearchclient.repo.SearchRepository;
-import com.project.flickrsearchclient.ui.adapter.EndlessScrollListener;
-import com.project.flickrsearchclient.ui.adapter.SearchResultAdapter;
-import com.project.flickrsearchclient.ui.adapter.SpacingDecoration;
+import com.project.flickrsearchclient.ui.recycler.EndlessScrollListener;
+import com.project.flickrsearchclient.ui.recycler.SearchResultAdapter;
+import com.project.flickrsearchclient.ui.recycler.SpacingDecoration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +49,6 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
     private static final int COLUMNS_COUNT = 3;
     private static final int INITIAL_PAGE = 1;
 
-    private static final String STATE_LAYOUT_MANAGER = "layoutManager";
     private static final String STATE_CURRENT_PAGE = "currentPage";
     private static final String STATE_ITEMS = "items";
     private static final String STATE_QUERY = "query";
@@ -66,10 +65,14 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
     @BindView(R.id.progress)
     ProgressBar mProgressBar;
 
-    private Unbinder mUnbinder;
     private SearchResultAdapter mSearchResultAdapter;
+    private SearchView mSearchView;
+
+    private Unbinder mUnbinder;
     private String mQuery;
+    private boolean mShouldSubmit;
     private int mCurrentPage;
+    private List<Photo> mPhotos;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -101,24 +104,23 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
         } else {
             mCurrentPage = savedInstanceState.getInt(STATE_CURRENT_PAGE);
             mQuery = savedInstanceState.getString(STATE_QUERY);
+            mShouldSubmit = false;
+            mPhotos = savedInstanceState.getParcelableArrayList(STATE_ITEMS);
         }
 
-        setupRecyclerView(savedInstanceState);
+        setupRecyclerView();
     }
 
-    private void setupRecyclerView(@Nullable Bundle savedInstanceState) {
+
+    private void setupRecyclerView() {
         GridLayoutManager gridLayoutManager = new GridLayoutManager(getContext(), COLUMNS_COUNT);
-        if (savedInstanceState != null) {
-            gridLayoutManager.onRestoreInstanceState(savedInstanceState.getParcelable(STATE_LAYOUT_MANAGER));
-        }
         mResultRecyclerView.setLayoutManager(gridLayoutManager);
         mResultRecyclerView.addItemDecoration(
                 new SpacingDecoration(getResources().getDimensionPixelSize(R.dimen.item_spacing)));
 
         mSearchResultAdapter = new SearchResultAdapter();
-        if (savedInstanceState != null) {
-            List<Photo> photos = savedInstanceState.getParcelableArrayList(STATE_ITEMS);
-            mSearchResultAdapter.addItems(photos);
+        if (mPhotos != null) {
+            mSearchResultAdapter.addItems(mPhotos);
         }
         mResultRecyclerView.setAdapter(mSearchResultAdapter);
         mResultRecyclerView.addOnScrollListener(new EndlessScrollListener(gridLayoutManager, INITIAL_PAGE) {
@@ -151,7 +153,8 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
                             mSearchResultAdapter.addItems(result);
                         } else {
                             mSearchResultAdapter.setItems(result);
-                        }
+
+                        mPhotos = mSearchResultAdapter.getPhotos();       }
 
                     }
                 }
@@ -178,34 +181,15 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
         inflater.inflate(R.menu.search_menu, menu);
 
         MenuItem searchItem = menu.findItem(R.id.search);
-        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
-        searchView.setOnQueryTextListener(this);
-        searchView.setIconifiedByDefault(false);
+        mSearchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        mSearchView.setOnQueryTextListener(this);
+        mSearchView.setIconifiedByDefault(false);
 
         if (!TextUtils.isEmpty(mQuery)) {
-            searchView.setQuery(mQuery, false);
+            mSearchView.setQuery(mQuery, mShouldSubmit);
         } else {
-            searchView.requestFocus();
+            mSearchView.requestFocus();
         }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.history) {
-            showHistoryFragment();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void showHistoryFragment() {
-        getChildFragmentManager()
-                .beginTransaction()
-                .add(R.id.history_container, HistoryFragment.getInstance())
-                .addToBackStack(null)
-                .setCustomAnimations(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-                .commitAllowingStateLoss();
-
     }
 
     @Override
@@ -215,11 +199,9 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
         outState.putString(STATE_QUERY, mQuery);
         outState.putInt(STATE_CURRENT_PAGE, mCurrentPage);
 
-        Parcelable listState = mResultRecyclerView.getLayoutManager().onSaveInstanceState();
-        outState.putParcelable(STATE_LAYOUT_MANAGER, listState);
-
-        outState.putParcelableArrayList(STATE_ITEMS,
-                new ArrayList<Parcelable>(mSearchResultAdapter.getPhotos()));
+        if (mPhotos != null) {
+            outState.putParcelableArrayList(STATE_ITEMS, new ArrayList<Parcelable>(mPhotos));
+        }
     }
 
     @Override public void onDestroyView() {
@@ -237,6 +219,15 @@ public class SearchResultsFragment extends Fragment implements SearchView.OnQuer
     @Override
     public boolean onQueryTextChange(String newText) {
         return false;
+    }
+
+    public void query(String query) {
+        if (mSearchView != null) {
+            mSearchView.setQuery(query, true);
+        } else {
+            mQuery = query;
+            mShouldSubmit = true;
+        }
     }
 
     private ApplicationComponent getApplicationComponent() {

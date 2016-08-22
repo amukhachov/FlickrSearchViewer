@@ -1,4 +1,4 @@
-package com.project.flickrsearchclient.ui.adapter;
+package com.project.flickrsearchclient.ui.recycler;
 
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;

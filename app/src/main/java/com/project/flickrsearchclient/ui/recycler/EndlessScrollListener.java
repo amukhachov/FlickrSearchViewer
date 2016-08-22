@@ -1,8 +1,7 @@
-package com.project.flickrsearchclient.ui.adapter;
+package com.project.flickrsearchclient.ui.recycler;
 
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.widget.AbsListView;
 
 public abstract class EndlessScrollListener extends RecyclerView.OnScrollListener {
     // The minimum number of items to have below your current scroll position

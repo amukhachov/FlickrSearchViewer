@@ -1,11 +1,14 @@
 package com.project.flickrsearchclient.ui.fragment;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ListFragment;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -14,6 +17,7 @@ import com.project.flickrsearchclient.application.ApplicationComponent;
 import com.project.flickrsearchclient.application.FlickrSearchApplication;
 import com.project.flickrsearchclient.model.SearchQuery;
 import com.project.flickrsearchclient.repo.SearchRepository;
+import com.project.flickrsearchclient.ui.activity.PictureSearchActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,15 +38,16 @@ public class HistoryFragment extends ListFragment {
 
     List<SearchQuery> mSearchQueries;
 
-    public static HistoryFragment getInstance() {
-        return new HistoryFragment();
-    }
-
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
 
         getApplicationComponent().inject(this);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return super.onCreateView(inflater, container, savedInstanceState);
     }
 
     @Override
@@ -56,6 +61,7 @@ public class HistoryFragment extends ListFragment {
         }
 
         getListView().setAdapter(createAdapter(mSearchQueries));
+        setListShown(true);
     }
 
     private ListAdapter createAdapter(List<SearchQuery> searchQueries) {
@@ -76,6 +82,14 @@ public class HistoryFragment extends ListFragment {
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
+
+        Activity activity = getActivity();
+        activity.setResult(Activity.RESULT_OK,
+                new Intent().
+                        putExtra(PictureSearchActivity.EXTRA_SEARCH_QUERY,
+                                mSearchQueries.get(position).getQuery())
+        );
+        activity.finish();
     }
 
     @Override
